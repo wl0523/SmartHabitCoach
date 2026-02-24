@@ -9,7 +9,14 @@ local.properties
 /.idea/assetWizardSettings.xml
 .DS_Store
 build/
+**/build/
 /captures
 .externalNativeBuild
 .cxx
 .kotlin/
+**/.kotlin/
+.gradle/
+**/.gradle/
+*.class
+*.apk
+*.aab

@@ -5,9 +5,11 @@ import com.example.smarthabitcoach.domain.model.HabitStatistics
 import com.example.smarthabitcoach.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
 /**
@@ -35,6 +37,7 @@ class GetStatisticsUseCase @Inject constructor(
         val currentStreak = calculateCurrentStreak(habits)
         val longestStreak = calculateLongestStreak(habits)
         val weeklyCompletionRate = calculateWeeklyCompletionRate(habits, sevenDaysAgo, today)
+        val weeklyDailyRates = calculateWeeklyDailyRates(habits)
         val completedToday = habits.count { it.isCompleted }
         val totalCompleted = habits.sumOf { it.completedDates.size }
 
@@ -42,6 +45,7 @@ class GetStatisticsUseCase @Inject constructor(
             currentStreak = currentStreak,
             longestStreak = longestStreak,
             weeklyCompletionRate = weeklyCompletionRate,
+            weeklyDailyRates = weeklyDailyRates,
             totalHabits = habits.size,
             completedToday = completedToday,
             totalCompleted = totalCompleted
@@ -118,8 +122,15 @@ class GetStatisticsUseCase @Inject constructor(
     }
 
     /**
-     * Calculate weekly completion rate: % of habits completed in last 7 days.
-     * Rate = (sum of completions in 7 days) / (total habits * 7 days)
+     * Calculate weekly completion rate.
+     *
+     * Formula:
+     *   rate = actualCompletions / possibleCompletions
+     *
+     * possibleCompletions per habit = min(days since habit was created, 7)
+     * → A habit created today counts as 1 possible day, not 7.
+     * → A habit created 3 days ago counts as 3 possible days.
+     * → A habit created 7+ days ago counts as 7 possible days.
      */
     private fun calculateWeeklyCompletionRate(
         habits: List<Habit>,
@@ -129,22 +140,72 @@ class GetStatisticsUseCase @Inject constructor(
         if (habits.isEmpty()) return 0f
 
         val sevenDaysAgoDate = LocalDate.parse(sevenDaysAgo, DATE_FORMATTER)
-        val todayDate = LocalDate.parse(today, DATE_FORMATTER)
+        val todayDate        = LocalDate.parse(today, DATE_FORMATTER)
 
         var totalPossibleCompletions = 0
         var actualCompletions = 0
 
         for (habit in habits) {
-            val completedInWeek = habit.completedDates.filter { dateStr ->
+            // Earliest date to count: whichever is later — 7 days ago or habit creation date
+            val habitCreatedDate = LocalDate.ofEpochDay(habit.createdAt / 86_400_000)
+            val startDate = if (habitCreatedDate.isAfter(sevenDaysAgoDate)) habitCreatedDate
+                            else sevenDaysAgoDate
+
+            // Number of days this habit could have been completed in the window
+            val possibleDays = ChronoUnit.DAYS.between(startDate, todayDate).toInt() + 1
+
+            // Count actual completions within the window
+            val completedInWeek = habit.completedDates.count { dateStr ->
                 val date = LocalDate.parse(dateStr, DATE_FORMATTER)
-                date.isAfter(sevenDaysAgoDate) && !date.isAfter(todayDate)
+                !date.isBefore(startDate) && !date.isAfter(todayDate)
             }
-            totalPossibleCompletions += 7 // 7 days for this habit
-            actualCompletions += completedInWeek.size
+
+            totalPossibleCompletions += possibleDays.coerceAtLeast(1)
+            actualCompletions        += completedInWeek
         }
 
         return if (totalPossibleCompletions == 0) 0f
-        else actualCompletions.toFloat() / totalPossibleCompletions
+        else (actualCompletions.toFloat() / totalPossibleCompletions).coerceIn(0f, 1f)
+    }
+
+    /**
+     * Calculates the actual daily completion rate for each day of the current week (Mon–Sun, 7 days).
+     *
+     * - index 0 = Monday of this week, index 6 = Sunday of this week
+     * - Completion rate per day = (number of habits completed that day) / (number of habits that existed that day)
+     * - Future dates (not yet reached) return 0f
+     * - Dates before a habit was created are excluded from the denominator
+     */
+    private fun calculateWeeklyDailyRates(habits: List<Habit>): List<Float> {
+        if (habits.isEmpty()) return List(7) { 0f }
+
+        val today = LocalDate.now()
+        // Monday of this week (ISO week standard)
+        val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+        return List(7) { dayIndex ->
+            val day = weekStart.plusDays(dayIndex.toLong())
+
+            // Future dates return 0f
+            if (day.isAfter(today)) return@List 0f
+
+            val dayStr = day.format(DATE_FORMATTER)
+            val dayEpoch = day.toEpochDay() * 86_400_000L // in milliseconds
+
+            // Only count habits that already existed on that day (createdAt <= day 23:59:59)
+            val eligibleHabits = habits.filter { habit ->
+                val habitCreatedDay = LocalDate.ofEpochDay(habit.createdAt / 86_400_000)
+                !habitCreatedDay.isAfter(day)
+            }
+
+            if (eligibleHabits.isEmpty()) return@List 0f
+
+            val completedOnDay = eligibleHabits.count { habit ->
+                dayStr in habit.completedDates
+            }
+
+            (completedOnDay.toFloat() / eligibleHabits.size).coerceIn(0f, 1f)
+        }
     }
 
     companion object {

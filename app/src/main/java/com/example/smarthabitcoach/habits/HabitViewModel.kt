@@ -6,6 +6,7 @@ import com.example.smarthabitcoach.domain.model.Habit
 import com.example.smarthabitcoach.domain.usecase.CreateHabitUseCase
 import com.example.smarthabitcoach.domain.usecase.GetHabitsUseCase
 import com.example.smarthabitcoach.domain.usecase.CompleteHabitUseCase
+import com.example.smarthabitcoach.domain.usecase.DeleteHabitUseCase
 import com.example.smarthabitcoach.domain.usecase.GetStatisticsUseCase
 import com.example.smarthabitcoach.habits.ui.HabitUiEvent
 import com.example.smarthabitcoach.habits.ui.HabitUiState
@@ -42,6 +43,7 @@ class HabitViewModel @Inject constructor(
     private val getHabits: GetHabitsUseCase,
     private val createHabit: CreateHabitUseCase,
     private val completeHabit: CompleteHabitUseCase,
+    private val deleteHabit: DeleteHabitUseCase,
     private val getStatistics: GetStatisticsUseCase
 ) : ViewModel() {
 
@@ -85,7 +87,7 @@ class HabitViewModel @Inject constructor(
         when (event) {
             is HabitUiEvent.CreateHabit -> createNewHabit(event.title, event.description)
             is HabitUiEvent.CompleteHabit -> toggleHabitCompletion(event.habitId, event.completed)
-            is HabitUiEvent.DeleteHabit -> deleteHabit(event.habitId)
+            is HabitUiEvent.DeleteHabit -> performDeleteHabit(event.habitId)
             HabitUiEvent.ShowCreateDialog -> _createDialogVisible.value = true
             HabitUiEvent.HideCreateDialog -> resetCreateDialog()
             is HabitUiEvent.UpdateNewHabitTitle -> _newHabitTitle.value = event.title
@@ -126,8 +128,15 @@ class HabitViewModel @Inject constructor(
         }
     }
 
-    private fun deleteHabit(@Suppress("UNUSED_PARAMETER") habitId: String) {
-        // TODO: Implement delete use case when available
+    private fun performDeleteHabit(habitId: String) {
+        viewModelScope.launch {
+            try {
+                deleteHabit(habitId)
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to delete habit: ${e.message}"
+            }
+        }
     }
 
     private fun resetCreateDialog() {
