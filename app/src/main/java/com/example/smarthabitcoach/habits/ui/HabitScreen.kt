@@ -167,14 +167,16 @@ fun HabitScreen(
                     TwoPaneContent(
                         uiState = uiState,
                         onComplete = { id, done -> viewModel.onEvent(HabitUiEvent.CompleteHabit(id, done)) },
-                        onDelete  = { id -> viewModel.onEvent(HabitUiEvent.DeleteHabit(id)) }
+                        onDelete  = { id -> viewModel.onEvent(HabitUiEvent.DeleteHabit(id)) },
+                        onEdit    = { habit -> viewModel.onEvent(HabitUiEvent.ShowEditDialog(habit)) }
                     )
                 }
                 else -> {
                     SinglePaneContent(
                         uiState = uiState,
                         onComplete = { id, done -> viewModel.onEvent(HabitUiEvent.CompleteHabit(id, done)) },
-                        onDelete  = { id -> viewModel.onEvent(HabitUiEvent.DeleteHabit(id)) }
+                        onDelete  = { id -> viewModel.onEvent(HabitUiEvent.DeleteHabit(id)) },
+                        onEdit    = { habit -> viewModel.onEvent(HabitUiEvent.ShowEditDialog(habit)) }
                     )
                 }
             }
@@ -196,6 +198,27 @@ fun HabitScreen(
                 onDismiss  = { viewModel.onEvent(HabitUiEvent.HideCreateDialog) },
                 isLoading  = uiState.isLoading
             )
+
+            EditHabitDialog(
+                visible             = uiState.editDialogHabit != null,
+                title               = uiState.editHabitTitle,
+                description         = uiState.editHabitDescription,
+                onTitleChange       = { viewModel.onEvent(HabitUiEvent.UpdateEditHabitTitle(it)) },
+                onDescriptionChange = { viewModel.onEvent(HabitUiEvent.UpdateEditHabitDescription(it)) },
+                onConfirm = {
+                    uiState.editDialogHabit?.let { habit ->
+                        viewModel.onEvent(
+                            HabitUiEvent.UpdateHabit(
+                                habitId     = habit.id,
+                                title       = uiState.editHabitTitle,
+                                description = uiState.editHabitDescription
+                            )
+                        )
+                    }
+                },
+                onDismiss  = { viewModel.onEvent(HabitUiEvent.HideEditDialog) },
+                isLoading  = uiState.isLoading
+            )
         }
     }
 }
@@ -205,7 +228,8 @@ fun HabitScreen(
 private fun SinglePaneContent(
     uiState: HabitUiState,
     onComplete: (String, Boolean) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEdit: (com.example.smarthabitcoach.domain.model.Habit) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
@@ -218,7 +242,8 @@ private fun SinglePaneContent(
         HabitListOrEmpty(
             habits = uiState.habits,
             onComplete = onComplete,
-            onDelete = onDelete
+            onDelete = onDelete,
+            onEdit = onEdit
         )
     }
 }
@@ -228,7 +253,8 @@ private fun SinglePaneContent(
 private fun TwoPaneContent(
     uiState: HabitUiState,
     onComplete: (String, Boolean) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEdit: (com.example.smarthabitcoach.domain.model.Habit) -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         // Left pane: habit list
@@ -240,7 +266,8 @@ private fun TwoPaneContent(
             HabitListOrEmpty(
                 habits = uiState.habits,
                 onComplete = onComplete,
-                onDelete = onDelete
+                onDelete = onDelete,
+                onEdit = onEdit
             )
         }
 
@@ -277,7 +304,8 @@ private fun TwoPaneContent(
 private fun HabitListOrEmpty(
     habits: List<Habit>,
     onComplete: (String, Boolean) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEdit: (Habit) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         // Empty state
@@ -300,13 +328,14 @@ private fun HabitListOrEmpty(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 96.dp, top = 4.dp)  // bottom FAB clearance
+                contentPadding = PaddingValues(bottom = 96.dp, top = 4.dp)
             ) {
                 itemsIndexed(items = habits, key = { _, item -> item.id }) { _, habit ->
                     HabitListItem(
                         habit = habit,
                         onComplete = onComplete,
-                        onDelete = onDelete
+                        onDelete = onDelete,
+                        onEdit = onEdit
                     )
                 }
             }

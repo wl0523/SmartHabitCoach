@@ -7,7 +7,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +70,7 @@ fun HabitListItem(
     habit: Habit,
     onComplete: (habitId: String, completed: Boolean) -> Unit,
     onDelete: (habitId: String) -> Unit,
+    onEdit: (habit: Habit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
@@ -88,7 +91,7 @@ fun HabitListItem(
         backgroundContent = { SwipeDismissBackground(fraction = dismissState.progress) },
         modifier = modifier.padding(horizontal = 16.dp, vertical = 5.dp)
     ) {
-        HabitCard(habit = habit, onComplete = onComplete)
+        HabitCard(habit = habit, onComplete = onComplete, onEdit = onEdit)
     }
 }
 
@@ -120,10 +123,12 @@ private fun SwipeDismissBackground(fraction: Float) {
 }
 
 // ── Main Habit Card ───────────────────────────────────────────────────────────
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HabitCard(
     habit: Habit,
-    onComplete: (habitId: String, completed: Boolean) -> Unit
+    onComplete: (habitId: String, completed: Boolean) -> Unit,
+    onEdit: (habit: Habit) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -169,10 +174,16 @@ private fun HabitCard(
     }
 
     Card(
-        onClick = { onComplete(habit.id, !habit.isCompleted) },
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scaleAnim.value; scaleY = scaleAnim.value }
+            .combinedClickable(
+                onClick = { onComplete(habit.id, !habit.isCompleted) },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onEdit(habit)
+                }
+            )
             .semantics(mergeDescendants = true) {
                 contentDescription = semanticDesc
                 stateDescription = if (habit.isCompleted) "Completed" else "Not completed"
@@ -323,17 +334,20 @@ private fun HabitListItemPreview() {
             HabitListItem(
                 habit = Habit(id = "1", title = "Morning Run", description = "5 km outdoor", isCompleted = false),
                 onComplete = { _, _ -> },
-                onDelete = {}
+                onDelete = {},
+                onEdit = {}
             )
             HabitListItem(
                 habit = Habit(id = "2", title = "Read 20 pages", description = "Non-fiction only", isCompleted = true),
                 onComplete = { _, _ -> },
-                onDelete = {}
+                onDelete = {},
+                onEdit = {}
             )
             HabitListItem(
                 habit = Habit(id = "3", title = "Meditate", isCompleted = false),
                 onComplete = { _, _ -> },
-                onDelete = {}
+                onDelete = {},
+                onEdit = {}
             )
         }
     }
