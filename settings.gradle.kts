@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "SmartHabitCoach"
 include(":app")
- 
+include(":domain")
+include(":data")
