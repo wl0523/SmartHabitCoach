@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Google Fonts provider certificates -->
+    <array name="com_google_android_gms_fonts_certs">
+        <item>@array/com_google_android_gms_fonts_certs_dev</item>
+        <item>@array/com_google_android_gms_fonts_certs_prod</item>
+    </array>
+
+    <string-array name="com_google_android_gms_fonts_certs_dev">
+        <item>MIIEqDCCA5CgAwIBAgIJANWFuGx90071MA0GCSqGSIb3DQEBBAUAMIGUMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UEChMKR29vZ2xlIEluYzEUMBIGA1UECxMLRW5naW5lZXJpbmcxFTATBgNVBAMTDGluc2VjdXJlLmNvbTAeFw0xNDEwMTYyMTU3NTFaFw0xNzA3MTIyMTU3NTFaMIGUMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UEChMKR29vZ2xlIEluYzEUMBIGA1UECxMLRW5naW5lZXJpbmcxFTATBgNVBAMTDGluc2VjdXJlLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANEKmCEIAcUC1gDIAdADAAAAMwgIBgUqAQ==</item>
+    </string-array>
+
+    <string-array name="com_google_android_gms_fonts_certs_prod">
+        <item>MIIEQzCCAyugAwIBAgIJAMLgh0ZkSjCNMA0GCSqGSIb3DQEBBAUAMHMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjETMBEGA1UECxMKR29vZ2xlIENOMQ4wDAYDVQQDEwVHb29nbGUwHhcNMDgwMTI0MjMzMjU5WhcNMzMwMTE3MjMzMjU5WjCBizELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxFDASBgNVBAoTC0dvb2dsZSBJbmMuMRMwEQYDVQQLEwpHb29nbGUgQ04xDjAMBgNVBAMTBUdvb2dsZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKoLOGOOBiH4FByRFMRCnXKHzqHMZHOT43Ht/Q5zUMmFBcCMFmg4FLLF5Qdz7rMlXzjIhzSxSHUfIqHQ8mBIkd8YKTJLE6GpRgBR4lNKEHjDHxMT6IWMFG8Scy5JJMm0Z7gzFz6OhFNHm3cK1/MXc7z7ZMhLhbQxG7UGCbfXMh+NaOoLJCFo31WzFpXGqZJ0qHuPW42w0hxfvFzGJLiLMT1Z0rAiLx/j8TxGRNm6kRlI3DPkUiW7SJNAQ3MBg5C3mWvNNh3XYUAINQPwH1rJ0MBZZXaFXH6DxfWz6G7FZvMHYmAw2ACkpn2GBMhMj2IoCm3b7tGn0SBt6WnMCAwEAAaOBoDCBnTAdBgNVHQ4EFgQUm+IHV2ccHsBqBt5ZtJot39wZhi4wbgYDVR0jBGcwZYAUm+IHV2ccHsBqBt5ZtJot39wZhi6hd6R1MHMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjETMBEGA1UECxMKR29vZ2xlIENOMQ4wDAYDVQQDEwVHb29nbGUwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQQFAAOCAQEAaFNkwjUKr1XW2EEQO+0lIEMqm1WpJBIQ==</item>
+    </string-array>
+
+    <!-- Preloaded fonts list for faster cold-start rendering -->
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/nunito_regular</item>
+        <item>@font/nunito_medium</item>
+        <item>@font/nunito_semibold</item>
+        <item>@font/nunito_bold</item>
+        <item>@font/nunito_extrabold</item>
+    </array>
+</resources>
+

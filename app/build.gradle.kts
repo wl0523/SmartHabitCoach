@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,19 +8,28 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// local.properties에서 API 키 읽기
+val localProperties = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) load(localPropsFile.inputStream())
+}
+val openAiApiKey: String = localProperties.getProperty("OPENAI_API_KEY")
+    ?: project.findProperty("OPENAI_API_KEY") as? String
+    ?: ""
+
 android {
     namespace = "com.example.smarthabitcoach"
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.smarthabitcoach"
-        minSdk = 26
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openAiApiKey\"")    }
 
     buildTypes {
         release {
@@ -35,6 +46,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -48,9 +60,6 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "2.0.21"
-    }
 
     packaging {
         resources {
@@ -62,6 +71,8 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
@@ -75,8 +86,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.runtime)
-    implementation("androidx.compose.material:material-icons-core:1.6.0")
-    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Lifecycle & ViewModel
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -84,6 +95,11 @@ dependencies {
 
     // Navigation Compose
     implementation(libs.androidx.navigation.compose)
+
+    // Adaptive layout (WindowSizeClass, two-pane)
+    implementation(libs.androidx.compose.material3.adaptive)
+    implementation(libs.androidx.compose.material3.adaptive.layout)
+    implementation(libs.androidx.compose.material3.adaptive.navigation)
 
     // Dependency Injection - Hilt
     implementation(libs.hilt.android)
@@ -98,6 +114,20 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+
+    // WorkManager + Hilt integration
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Networking — OpenAI API
+    implementation(libs.retrofit.core)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Security — EncryptedSharedPreferences for API key storage
+    implementation(libs.security.crypto)
 
     // Testing
     testImplementation(libs.junit)

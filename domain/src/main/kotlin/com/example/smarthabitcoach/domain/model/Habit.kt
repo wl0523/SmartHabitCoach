@@ -10,8 +10,10 @@ data class Habit(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val description: String? = null,
-    val isCompleted: Boolean = false, // Today's completion status
-    val createdAt: Long = System.currentTimeMillis(),
-    val completedDates: Set<String> = emptySet(), // Dates in YYYY-MM-DD format
+    val isCompleted: Boolean = false, // Overall completion status
+    val isCompletedToday: Boolean = false, // Today's completion status
+    val streak: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(), // Timestamp for when the habit was created
+    val completedDates: Set<String> = emptySet(), // Set of dates when the habit was completed
+    val completionHistory: List<Long> = emptyList() // List of completion timestamps
 )
-

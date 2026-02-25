@@ -67,5 +67,4 @@ else
 fi
 
 echo ""
-echo "For more info, see: GRADLE_SYNC_COMPLETE.md"
 

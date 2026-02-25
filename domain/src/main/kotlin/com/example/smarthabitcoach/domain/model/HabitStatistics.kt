@@ -5,11 +5,46 @@ package com.example.smarthabitcoach.domain.model
  * Calculated from individual habits.
  */
 data class HabitStatistics(
-    val currentStreak: Int = 0, // Consecutive days completed
-    val longestStreak: Int = 0, // Historical longest streak
-    val weeklyCompletionRate: Float = 0f, // 0-1 (0% - 100%)
+    /**
+     * Total number of habits.
+     */
     val totalHabits: Int = 0,
-    val completedToday: Int = 0,
-    val totalCompleted: Int = 0, // All-time completed count
-)
 
+    /**
+     * Number of habits completed today.
+     */
+    val completedToday: Int = 0,
+
+    /**
+     * Current streak of consecutive habit completions.
+     */
+    val currentStreak: Int = 0,
+
+    /**
+     * Longest streak of consecutive habit completions.
+     */
+    val longestStreak: Int = 0,
+
+    /**
+     * Weekly completion rate of habits.
+     * Ranges from 0f to 1f.
+     */
+    val weeklyCompletionRate: Float = 0f,
+
+    /**
+     * Average completion rate of habits this week.
+     * Ranges from 0f to 1f.
+     */
+    val averageCompletionRate: Float = 0f,
+
+    /**
+     * Daily completion rates of habits for the past week.
+     * Ranges from 0f to 1f, for each day from Sunday to Saturday.
+     */
+    val weeklyDailyRates: List<Float> = List(7) { 0f },
+
+    /**
+     * Total number of times habits have been completed.
+     */
+    val totalCompleted: Int = 0
+)

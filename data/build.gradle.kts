@@ -1,45 +1,48 @@
 plugins {
-    id("com.android.library")
-    kotlin("android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.example.smarthabitcoach.data"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
-        targetSdk = 34
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        jvmToolchain(17)
-    }
+    kotlin { jvmToolchain(17) }
 }
 
 dependencies {
     implementation(project(":domain"))
 
-    implementation("androidx.room:room-runtime:2.5.2")
-    ksp("androidx.room:room-compiler:2.5.2")
-    implementation("androidx.room:room-ktx:2.5.2")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // Room
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.room.ktx)
 
-    // Hilt compiler and DI bindings live in the app module to avoid annotation processor in the data module.
-    implementation("com.google.dagger:hilt-android:2.46.1")
-    ksp("com.google.dagger:hilt-compiler:2.46.1")
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    // Networking — OpenAI
+    implementation(libs.retrofit.core)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging)
+    implementation(libs.kotlinx.serialization.json)
 }
-
-
-
-
-
-
