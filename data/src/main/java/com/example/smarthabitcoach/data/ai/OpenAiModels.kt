@@ -41,3 +41,8 @@ data class WeeklyInsightApiResponse(
     val overallScore: Int
 )
 
+@Serializable
+data class DailyNudgeApiResponse(
+    val message: String  // single coaching nudge message
+)
+

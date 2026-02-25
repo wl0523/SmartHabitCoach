@@ -16,9 +16,7 @@ class HabitRepositoryImpl @Inject constructor(
 
     private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    override fun getHabits(): Flow<List<Habit>> = observeHabits()
-
-    override fun observeHabits(): Flow<List<Habit>> = dao.observeAll().map { list ->
+    override fun getHabits(): Flow<List<Habit>> = dao.observeAll().map { list ->
         list.map { HabitMapper.toDomain(it) }
     }
 
@@ -43,9 +41,31 @@ class HabitRepositoryImpl @Inject constructor(
         val today = LocalDate.now().format(dateFmt)
         val updatedDates = if (completed) entity.completedDates + today
                            else entity.completedDates - today
+
+        // Recalculate current streak and update longestStreak if needed
+        val newStreak = calculateCurrentStreak(updatedDates, LocalDate.now())
+        val newLongest = maxOf(entity.longestStreak, newStreak)
+
         dao.update(entity.copy(
             isCompleted = completed,
-            completedDates = updatedDates
+            completedDates = updatedDates,
+            longestStreak = newLongest
         ))
     }
+
+    /**
+     * Calculates the current consecutive streak ending on [today] (or yesterday).
+     * Mirrors the logic in HabitMapper to stay in sync.
+     */
+    private fun calculateCurrentStreak(completedDates: Set<String>, today: LocalDate): Int {
+        if (completedDates.isEmpty()) return 0
+        var checkDate = if (today.format(dateFmt) in completedDates) today else today.minusDays(1)
+        var streak = 0
+        while (checkDate.format(dateFmt) in completedDates) {
+            streak++
+            checkDate = checkDate.minusDays(1)
+        }
+        return streak
+    }
 }
+

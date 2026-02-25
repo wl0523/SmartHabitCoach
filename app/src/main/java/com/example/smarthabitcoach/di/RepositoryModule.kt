@@ -6,13 +6,16 @@ import androidx.work.WorkManager
 import com.example.smarthabitcoach.BuildConfig
 import com.example.smarthabitcoach.data.ai.OpenAiService
 import com.example.smarthabitcoach.data.di.ApiKey
+import com.example.smarthabitcoach.data.local.DailyNudgeDao
 import com.example.smarthabitcoach.data.local.HabitDao
 import com.example.smarthabitcoach.data.local.HabitDatabase
 import com.example.smarthabitcoach.data.local.WeeklyInsightDao
 import com.example.smarthabitcoach.data.repository.AiRepositoryImpl
+import com.example.smarthabitcoach.data.repository.DailyNudgeCacheRepositoryImpl
 import com.example.smarthabitcoach.data.repository.HabitRepositoryImpl
 import com.example.smarthabitcoach.data.repository.WeeklyInsightCacheRepositoryImpl
 import com.example.smarthabitcoach.domain.repository.AiRepository
+import com.example.smarthabitcoach.domain.repository.DailyNudgeCacheRepository
 import com.example.smarthabitcoach.domain.repository.HabitRepository
 import com.example.smarthabitcoach.domain.repository.WeeklyInsightCacheRepository
 import dagger.Binds
@@ -40,6 +43,7 @@ abstract class RepositoryBindsModule {
     @Binds abstract fun bindHabitRepository(impl: HabitRepositoryImpl): HabitRepository
     @Binds abstract fun bindInsightCache(impl: WeeklyInsightCacheRepositoryImpl): WeeklyInsightCacheRepository
     @Binds abstract fun bindAiRepository(impl: AiRepositoryImpl): AiRepository
+    @Binds abstract fun bindDailyNudgeCache(impl: DailyNudgeCacheRepositoryImpl): DailyNudgeCacheRepository
 }
 
 @Module
@@ -55,6 +59,7 @@ object RepositoryProvidesModule {
 
     @Provides fun provideHabitDao(db: HabitDatabase): HabitDao = db.habitDao()
     @Provides fun provideWeeklyInsightDao(db: HabitDatabase): WeeklyInsightDao = db.weeklyInsightDao()
+    @Provides fun provideDailyNudgeDao(db: HabitDatabase): DailyNudgeDao = db.dailyNudgeDao()
 
     @Provides @Singleton
     fun provideJson(): Json = Json { ignoreUnknownKeys = true; isLenient = true }

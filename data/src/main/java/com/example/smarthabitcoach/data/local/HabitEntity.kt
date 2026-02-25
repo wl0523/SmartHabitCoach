@@ -12,5 +12,6 @@ data class HabitEntity(
     @ColumnInfo("is_completed") val isCompleted: Boolean,
     @ColumnInfo("created_at") val createdAt: Long,
     @ColumnInfo("completed_dates") val completedDates: Set<String> = emptySet(), // Stored as TEXT (JSON)
+    @ColumnInfo("longest_streak") val longestStreak: Int = 0, // All-time longest streak
 )
 

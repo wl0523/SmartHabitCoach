@@ -2,7 +2,9 @@ package com.example.smarthabitcoach.domain.usecase
 
 import com.example.smarthabitcoach.domain.model.Habit
 import com.example.smarthabitcoach.domain.model.HabitRiskAssessment
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -11,13 +13,16 @@ import javax.inject.Inject
  *
  * Uses a sliding-window day-of-week miss-rate algorithm:
  * For each habit, look back at the same weekday for the last 4 weeks (excluding today).
- * missRate = (# of same-weekday occurrences NOT in completedDates) / windowSize
- * If missRate >= 0.5 (missed 2+ out of 4 same-weekdays), the habit is flagged "at risk".
+ * missRate = (# of same-weekday occurrences NOT in completedDates) / validWindowSize
+ * If missRate >= 0.5 (missed 2+ out of valid window), the habit is flagged "at risk".
  *
- * Fully deterministic — zero LLM cost. The key design insight:
- * use LLM only where it adds value (natural language), not for logic that code does better.
+ * Dates before the habit's createdAt are excluded from the window.
+ * If fewer than 2 valid data points exist, no judgment is made (too new to assess).
+ *
+ * Fully deterministic — zero LLM cost.
  *
  * Example: it's Thursday. Habit "Evening Read" was missed last 3 Thursdays → missRate = 0.75 → at risk.
+ * Example: habit created today → 0 valid past Thursdays → not assessed → not at risk.
  */
 class DetectAtRiskHabitsUseCase @Inject constructor() {
 
@@ -34,11 +39,23 @@ class DetectAtRiskHabitsUseCase @Inject constructor() {
     }
 
     private fun assess(habit: Habit, today: LocalDate): HabitRiskAssessment {
+        val createdDate = Instant.ofEpochMilli(habit.createdAt)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
         // Build the 4-week window: same weekday as today, going back 1–4 weeks
-        val windowDates = (1..4).map { weeksAgo -> today.minusWeeks(weeksAgo.toLong()) }
+        // Exclude any dates that predate the habit's creation
+        val windowDates = (1..4)
+            .map { weeksAgo -> today.minusWeeks(weeksAgo.toLong()) }
+            .filter { it >= createdDate }
+
+        // Not enough history to make a meaningful assessment — treat as not at risk
+        if (windowDates.size < 2) {
+            return HabitRiskAssessment(habit = habit, missRate = 0f, isAtRisk = false)
+        }
 
         val missedCount = windowDates.count { date ->
-            date.formatter() !in habit.completedDates
+            date.format(formatter) !in habit.completedDates
         }
 
         val missRate = missedCount / windowDates.size.toFloat()
@@ -49,6 +66,4 @@ class DetectAtRiskHabitsUseCase @Inject constructor() {
             isAtRisk = missRate >= 0.5f
         )
     }
-
-    private fun LocalDate.formatter(): String = this.format(formatter)
 }

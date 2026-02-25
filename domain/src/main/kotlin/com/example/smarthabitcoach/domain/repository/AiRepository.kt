@@ -1,5 +1,6 @@
 package com.example.smarthabitcoach.domain.repository
 
+import com.example.smarthabitcoach.domain.model.DailyNudge
 import com.example.smarthabitcoach.domain.model.Habit
 import com.example.smarthabitcoach.domain.model.HabitStatistics
 import com.example.smarthabitcoach.domain.model.WeeklyInsight
@@ -20,4 +21,14 @@ interface AiRepository {
         statistics: HabitStatistics,
         weekOf: LocalDate
     ): Result<WeeklyInsight>
+
+    /**
+     * Generate a daily coaching nudge via GPT-4o-mini.
+     * Returns Result.failure on network/parse errors — caller handles fallback.
+     */
+    suspend fun generateDailyNudge(
+        habits: List<Habit>,
+        statistics: HabitStatistics,
+        date: LocalDate
+    ): Result<DailyNudge>
 }

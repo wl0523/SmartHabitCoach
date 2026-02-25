@@ -1,17 +1,17 @@
 package com.example.smarthabitcoach.habits.ui
 
+import com.example.smarthabitcoach.domain.model.DailyNudge
 import com.example.smarthabitcoach.domain.model.Habit
 import com.example.smarthabitcoach.domain.model.HabitRiskAssessment
 import com.example.smarthabitcoach.domain.model.HabitStatistics
+import com.example.smarthabitcoach.domain.model.WeeklyInsight
 
-/**
- * Immutable UI state for habit management screen.
- * Represents all possible states the screen can be in.
- */
 data class HabitUiState(
     val habits: List<Habit> = emptyList(),
     val statistics: HabitStatistics = HabitStatistics(),
     val atRiskHabits: List<HabitRiskAssessment> = emptyList(),
+    val dailyNudge: DailyNudge? = null,
+    val weeklyInsight: WeeklyInsight? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val createDialogVisible: Boolean = false,
@@ -41,4 +41,3 @@ sealed class HabitUiEvent {
     data class UpdateEditHabitDescription(val description: String) : HabitUiEvent()
     object ClearError : HabitUiEvent()
 }
-

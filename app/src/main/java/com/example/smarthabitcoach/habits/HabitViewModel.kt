@@ -2,15 +2,18 @@ package com.example.smarthabitcoach.habits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smarthabitcoach.domain.model.DailyNudge
 import com.example.smarthabitcoach.domain.model.Habit
+import com.example.smarthabitcoach.domain.model.WeeklyInsight
 import com.example.smarthabitcoach.domain.usecase.CompleteHabitUseCase
+import com.example.smarthabitcoach.domain.usecase.CreateHabitUseCase
 import com.example.smarthabitcoach.domain.usecase.DeleteHabitUseCase
 import com.example.smarthabitcoach.domain.usecase.DetectAtRiskHabitsUseCase
+import com.example.smarthabitcoach.domain.usecase.GenerateDailyNudgeUseCase
 import com.example.smarthabitcoach.domain.usecase.GenerateWeeklyInsightUseCase
 import com.example.smarthabitcoach.domain.usecase.GetHabitsUseCase
 import com.example.smarthabitcoach.domain.usecase.GetStatisticsUseCase
 import com.example.smarthabitcoach.domain.usecase.UpdateHabitUseCase
-import com.example.smarthabitcoach.domain.usecase.CreateHabitUseCase
 import com.example.smarthabitcoach.habits.ui.HabitUiEvent
 import com.example.smarthabitcoach.habits.ui.HabitUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,31 +21,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Helper data class to hold UI state components.
- * Used to reduce number of combine() arguments (max 6 Flow support).
- */
-private data class UiStateComponents(
-    val createDialogVisible: Boolean,
-    val newHabitTitle: String,
-    val newHabitDescription: String,
-    val editDialogHabit: com.example.smarthabitcoach.domain.model.Habit?,
-    val editHabitTitle: String,
-    val editHabitDescription: String,
-    val error: String?,
-    val isLoading: Boolean
-)
-
-/**
  * ViewModel for Habit management feature.
- * Handles all business logic and state management.
- *
- * Integrates statistics (streak, completion rate) from GetStatisticsUseCase.
- * All calculations happen in Domain layer; ViewModel only combines and exposes state.
+ * Combines 5 MutableStateFlow sources + domain Flows into a single StateFlow<HabitUiState>.
  */
 @HiltViewModel
 class HabitViewModel @Inject constructor(
@@ -53,40 +39,49 @@ class HabitViewModel @Inject constructor(
     private val updateHabit: UpdateHabitUseCase,
     private val getStatistics: GetStatisticsUseCase,
     private val detectAtRiskHabits: DetectAtRiskHabitsUseCase,
-    private val generateWeeklyInsight: GenerateWeeklyInsightUseCase
+    private val generateWeeklyInsight: GenerateWeeklyInsightUseCase,
+    private val generateDailyNudge: GenerateDailyNudgeUseCase
 ) : ViewModel() {
 
-    // Mutable state for UI-specific fields (dialog, input)
     private val _createDialogVisible = MutableStateFlow(false)
-    private val _newHabitTitle = MutableStateFlow("")
+    private val _newHabitTitle       = MutableStateFlow("")
     private val _newHabitDescription = MutableStateFlow("")
-    private val _editDialogHabit = MutableStateFlow<Habit?>(null)
-    private val _editHabitTitle = MutableStateFlow("")
+    private val _editDialogHabit     = MutableStateFlow<Habit?>(null)
+    private val _editHabitTitle      = MutableStateFlow("")
     private val _editHabitDescription = MutableStateFlow("")
-    private val _error = MutableStateFlow<String?>(null)
-    private val _isLoading = MutableStateFlow(false)
+    private val _error               = MutableStateFlow<String?>(null)
+    private val _isLoading           = MutableStateFlow(false)
 
-    // Weekly AI insight — loaded once on ViewModel init, cached in Room
-    private val _weeklyInsight = MutableStateFlow<com.example.smarthabitcoach.domain.model.WeeklyInsight?>(null)
-    val weeklyInsight: StateFlow<com.example.smarthabitcoach.domain.model.WeeklyInsight?> = _weeklyInsight
+    // AI content — Room-cached, loaded once per session
+    private val _weeklyInsight = MutableStateFlow<WeeklyInsight?>(null)
+    private val _dailyNudge    = MutableStateFlow<DailyNudge?>(null)
 
     init {
         loadWeeklyInsight()
+        loadDailyNudge()
     }
 
     private fun loadWeeklyInsight() {
         viewModelScope.launch {
             try {
-                val habits = getHabits().stateIn(viewModelScope).value
-                val stats  = getStatistics().stateIn(viewModelScope).value
+                val habits = getHabits().first()
+                val stats  = getStatistics().first()
                 _weeklyInsight.value = generateWeeklyInsight(habits, stats)
-            } catch (_: Exception) {
-                // Insight failure is non-critical — silently ignore
-            }
+            } catch (_: Exception) { /* non-critical */ }
         }
     }
 
-    // Combine domain state (habits + statistics) with UI state into single StateFlow
+    private fun loadDailyNudge() {
+        viewModelScope.launch {
+            try {
+                val habits = getHabits().first()
+                val stats  = getStatistics().first()
+                _dailyNudge.value = generateDailyNudge(habits, stats)
+            } catch (_: Exception) { /* non-critical */ }
+        }
+    }
+
+    // Single StateFlow combining all state sources
     val uiState: StateFlow<HabitUiState> = combine(
         getHabits(),
         getStatistics(),
@@ -96,28 +91,32 @@ class HabitViewModel @Inject constructor(
             _newHabitDescription,
             _editDialogHabit,
             _editHabitTitle,
-        ) { dialogVisible, title, description, editHabit, editTitle ->
-            Triple(dialogVisible, title to description, editHabit to editTitle)
+        ) { dialogVisible, title, desc, editHabit, editTitle ->
+            Triple(dialogVisible, title to desc, editHabit to editTitle)
         },
         combine(_editHabitDescription, _error, _isLoading) { editDesc, error, loading ->
             Triple(editDesc, error, loading)
-        }
-    ) { habits, statistics, uiTop, uiBottom ->
+        },
+        combine(_dailyNudge, _weeklyInsight) { nudge, insight -> nudge to insight }
+    ) { habits, statistics, uiTop, uiBottom, aiContent ->
         val (dialogVisible, createFields, editFields) = uiTop
         val (createTitle, createDesc) = createFields
         val (editHabit, editTitle) = editFields
         val (editDesc, error, loading) = uiBottom
+        val (dailyNudge, weeklyInsight) = aiContent
         HabitUiState(
-            habits = habits,
-            statistics = statistics,
-            atRiskHabits = detectAtRiskHabits(habits),
-            isLoading = loading,
-            error = error,
-            createDialogVisible = dialogVisible,
-            newHabitTitle = createTitle,
-            newHabitDescription = createDesc,
-            editDialogHabit = editHabit,
-            editHabitTitle = editTitle,
+            habits           = habits,
+            statistics       = statistics,
+            atRiskHabits     = detectAtRiskHabits(habits),
+            dailyNudge       = dailyNudge,
+            weeklyInsight    = weeklyInsight,
+            isLoading        = loading,
+            error            = error,
+            createDialogVisible  = dialogVisible,
+            newHabitTitle        = createTitle,
+            newHabitDescription  = createDesc,
+            editDialogHabit      = editHabit,
+            editHabitTitle       = editTitle,
             editHabitDescription = editDesc
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HabitUiState())

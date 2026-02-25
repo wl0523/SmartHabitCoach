@@ -237,7 +237,11 @@ private fun SinglePaneContent(
             enter = fadeIn(tween(400)) + expandVertically(tween(400)),
             exit  = fadeOut(tween(200)) + shrinkVertically(tween(200))
         ) {
-            StatisticsCard(statistics = uiState.statistics)
+            Column {
+                StatisticsCard(statistics = uiState.statistics)
+                AtRiskHabitsCard(atRiskHabits = uiState.atRiskHabits)
+                DailyNudgeCard(nudge = uiState.dailyNudge)
+            }
         }
         HabitListOrEmpty(
             habits = uiState.habits,
@@ -295,6 +299,8 @@ private fun TwoPaneContent(
                 statistics = uiState.statistics,
                 modifier = Modifier.fillMaxWidth()
             )
+            AtRiskHabitsCard(atRiskHabits = uiState.atRiskHabits)
+            DailyNudgeCard(nudge = uiState.dailyNudge)
         }
     }
 }
