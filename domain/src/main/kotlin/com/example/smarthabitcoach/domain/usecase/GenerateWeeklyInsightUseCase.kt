@@ -25,7 +25,6 @@ class GenerateWeeklyInsightUseCase @Inject constructor(
         // 캐시에 이번 주 데이터가 있으면 재사용 (API 비용 절약)
         cacheRepository.getInsightForWeek(weekOf)?.let { return it }
 
-        // AI 호출 시도
         val result = aiRepository.generateWeeklyInsight(habits, stats, weekOf)
 
         return if (result.isSuccess) {
@@ -33,7 +32,6 @@ class GenerateWeeklyInsightUseCase @Inject constructor(
             cacheRepository.saveInsight(insight)
             insight
         } else {
-            // API 실패 시 더미 fallback
             buildFallback(habits, stats, weekOf)
         }
     }

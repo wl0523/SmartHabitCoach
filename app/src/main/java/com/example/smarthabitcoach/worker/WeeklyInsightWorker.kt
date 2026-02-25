@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -16,16 +15,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 
-/**
- * WeeklyInsightWorker — runs once per week via WorkManager.
- *
- * Pipeline:
- * 1. Fetch current habits + statistics from domain layer
- * 2. Call GenerateWeeklyInsightUseCase (checks Room cache first — idempotent)
- * 3. Post a notification with the AI-generated behavioral summary
- *
- * Cost: at most 1 GPT-4o-mini call/user/week ≈ $0.005/user/year
- */
 @HiltWorker
 class WeeklyInsightWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -37,17 +26,15 @@ class WeeklyInsightWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            val habits    = getHabits().first()
-            val stats     = getStatistics().first()
-            val insight   = generateWeeklyInsight(habits, stats)
-
+            val habits  = getHabits().first()
+            val stats   = getStatistics().first()
+            val insight = generateWeeklyInsight(habits, stats)
             postNotification(
                 title   = "Your Weekly Habit Report 📊",
                 message = insight.recommendation
             )
             Result.success()
-        } catch (_: Exception) {
-            // Retry up to 3 times with exponential backoff (WorkManager default)
+        } catch (e: Exception) {
             if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
@@ -56,7 +43,6 @@ class WeeklyInsightWorker @AssistedInject constructor(
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE)
             as NotificationManager
 
-        // Create channel (no-op on repeated calls, API 26+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -78,9 +64,8 @@ class WeeklyInsightWorker @AssistedInject constructor(
     }
 
     companion object {
-        const val WORK_NAME   = "WeeklyInsightWorker"
+        const val WORK_NAME               = "WeeklyInsightWorker"
         private const val CHANNEL_ID      = "weekly_insight_channel"
         private const val NOTIFICATION_ID = 1001
     }
 }
-

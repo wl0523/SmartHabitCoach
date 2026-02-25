@@ -3,10 +3,11 @@ package com.example.smarthabitcoach
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.smarthabitcoach.worker.WeeklyInsightWorker
+import java.util.concurrent.TimeUnit
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -26,10 +27,10 @@ class SmartHabitCoachApplication : Application(), Configuration.Provider {
     }
 
     private fun scheduleWeeklyInsightWorker() {
-        val request = OneTimeWorkRequestBuilder<WeeklyInsightWorker>().build()
-        WorkManager.getInstance(this).enqueueUniqueWork(
+        val request = PeriodicWorkRequestBuilder<WeeklyInsightWorker>(7, TimeUnit.DAYS).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             WeeklyInsightWorker.WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.KEEP,
             request
         )
     }

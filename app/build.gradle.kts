@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,15 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+// local.properties에서 API 키 읽기
+val localProperties = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) load(localPropsFile.inputStream())
+}
+val openAiApiKey: String = localProperties.getProperty("OPENAI_API_KEY")
+    ?: project.findProperty("OPENAI_API_KEY") as? String
+    ?: ""
 
 android {
     namespace = "com.example.smarthabitcoach"
@@ -18,8 +29,7 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "OPENAI_API_KEY", "\"${project.findProperty("OPENAI_API_KEY") ?: ""}\"")
-    }
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openAiApiKey\"")    }
 
     buildTypes {
         release {
