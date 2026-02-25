@@ -1,6 +1,7 @@
 package com.example.smarthabitcoach.habits.ui
 
 import com.example.smarthabitcoach.domain.model.Habit
+import com.example.smarthabitcoach.domain.model.HabitRiskAssessment
 import com.example.smarthabitcoach.domain.model.HabitStatistics
 
 /**
@@ -10,6 +11,7 @@ import com.example.smarthabitcoach.domain.model.HabitStatistics
 data class HabitUiState(
     val habits: List<Habit> = emptyList(),
     val statistics: HabitStatistics = HabitStatistics(),
+    val atRiskHabits: List<HabitRiskAssessment> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val createDialogVisible: Boolean = false,

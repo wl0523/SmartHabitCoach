@@ -3,12 +3,14 @@ package com.example.smarthabitcoach.habits
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smarthabitcoach.domain.model.Habit
-import com.example.smarthabitcoach.domain.usecase.CreateHabitUseCase
-import com.example.smarthabitcoach.domain.usecase.GetHabitsUseCase
 import com.example.smarthabitcoach.domain.usecase.CompleteHabitUseCase
 import com.example.smarthabitcoach.domain.usecase.DeleteHabitUseCase
+import com.example.smarthabitcoach.domain.usecase.DetectAtRiskHabitsUseCase
+import com.example.smarthabitcoach.domain.usecase.GenerateWeeklyInsightUseCase
+import com.example.smarthabitcoach.domain.usecase.GetHabitsUseCase
 import com.example.smarthabitcoach.domain.usecase.GetStatisticsUseCase
 import com.example.smarthabitcoach.domain.usecase.UpdateHabitUseCase
+import com.example.smarthabitcoach.domain.usecase.CreateHabitUseCase
 import com.example.smarthabitcoach.habits.ui.HabitUiEvent
 import com.example.smarthabitcoach.habits.ui.HabitUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,7 +51,9 @@ class HabitViewModel @Inject constructor(
     private val completeHabit: CompleteHabitUseCase,
     private val deleteHabit: DeleteHabitUseCase,
     private val updateHabit: UpdateHabitUseCase,
-    private val getStatistics: GetStatisticsUseCase
+    private val getStatistics: GetStatisticsUseCase,
+    private val detectAtRiskHabits: DetectAtRiskHabitsUseCase,
+    private val generateWeeklyInsight: GenerateWeeklyInsightUseCase
 ) : ViewModel() {
 
     // Mutable state for UI-specific fields (dialog, input)
@@ -61,6 +65,26 @@ class HabitViewModel @Inject constructor(
     private val _editHabitDescription = MutableStateFlow("")
     private val _error = MutableStateFlow<String?>(null)
     private val _isLoading = MutableStateFlow(false)
+
+    // Weekly AI insight — loaded once on ViewModel init, cached in Room
+    private val _weeklyInsight = MutableStateFlow<com.example.smarthabitcoach.domain.model.WeeklyInsight?>(null)
+    val weeklyInsight: StateFlow<com.example.smarthabitcoach.domain.model.WeeklyInsight?> = _weeklyInsight
+
+    init {
+        loadWeeklyInsight()
+    }
+
+    private fun loadWeeklyInsight() {
+        viewModelScope.launch {
+            try {
+                val habits = getHabits().stateIn(viewModelScope).value
+                val stats  = getStatistics().stateIn(viewModelScope).value
+                _weeklyInsight.value = generateWeeklyInsight(habits, stats)
+            } catch (_: Exception) {
+                // Insight failure is non-critical — silently ignore
+            }
+        }
+    }
 
     // Combine domain state (habits + statistics) with UI state into single StateFlow
     val uiState: StateFlow<HabitUiState> = combine(
@@ -86,6 +110,7 @@ class HabitViewModel @Inject constructor(
         HabitUiState(
             habits = habits,
             statistics = statistics,
+            atRiskHabits = detectAtRiskHabits(habits),
             isLoading = loading,
             error = error,
             createDialogVisible = dialogVisible,

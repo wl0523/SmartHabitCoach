@@ -3,17 +3,48 @@ package com.example.smarthabitcoach.domain.model
 /**
  * Immutable domain model for habit statistics.
  * Calculated from individual habits.
- *
- * [weeklyDailyRates] — Daily completion rate from Monday (index 0) to Sunday (index 6) of this week (0f~1f).
- * Returns 0f if there are no habits or if the habit was not yet created on that date.
  */
 data class HabitStatistics(
-    val currentStreak: Int = 1,
-    val longestStreak: Int = 0,
-    val weeklyCompletionRate: Float = 0f,
-    val weeklyDailyRates: List<Float> = List(7) { 0f }, // Mon~Sun, 7 entries
+    /**
+     * Total number of habits.
+     */
     val totalHabits: Int = 0,
-    val completedToday: Int = 0,
-    val totalCompleted: Int = 0,
-)
 
+    /**
+     * Number of habits completed today.
+     */
+    val completedToday: Int = 0,
+
+    /**
+     * Current streak of consecutive habit completions.
+     */
+    val currentStreak: Int = 0,
+
+    /**
+     * Longest streak of consecutive habit completions.
+     */
+    val longestStreak: Int = 0,
+
+    /**
+     * Weekly completion rate of habits.
+     * Ranges from 0f to 1f.
+     */
+    val weeklyCompletionRate: Float = 0f,
+
+    /**
+     * Average completion rate of habits this week.
+     * Ranges from 0f to 1f.
+     */
+    val averageCompletionRate: Float = 0f,
+
+    /**
+     * Daily completion rates of habits for the past week.
+     * Ranges from 0f to 1f, for each day from Sunday to Saturday.
+     */
+    val weeklyDailyRates: List<Float> = List(7) { 0f },
+
+    /**
+     * Total number of times habits have been completed.
+     */
+    val totalCompleted: Int = 0
+)
